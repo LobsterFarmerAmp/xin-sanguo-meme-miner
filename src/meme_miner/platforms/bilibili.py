@@ -26,19 +26,31 @@ class BilibiliPlatform(BasePlatform):
     def get_platform_name(self) -> str:
         return "bilibili"
 
+    def _clean_html_tags(self, text: str) -> str:
+        """Remove HTML tags from text (e.g., <em class=\"keyword\">)."""
+        return re.sub(r'<[^>]+>', '', text)
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException))
     )
-    async def _search_videos_request(self, keyword: str, page: int = 1) -> dict:
-        """Make API request to search videos."""
+    async def _search_videos_request(self, keyword: str, page: int = 1, order: str = "") -> dict:
+        """Make API request to search videos.
+        
+        Args:
+            keyword: Search keyword
+            page: Page number
+            order: Sort order - "pubdate" (newest first), "click" (most viewed), "dm" (most danmaku)
+        """
         params = {
             "search_type": "video",
             "keyword": keyword,
             "page": page,
             "page_size": 20,
         }
+        if order:
+            params["order"] = order
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 self.base_url,
@@ -51,14 +63,20 @@ class BilibiliPlatform(BasePlatform):
                 raise Exception(f"Bilibili API error: {data.get('message', 'unknown')}")
             return data.get("data", {}).get("result", [])
 
-    async def search_videos(self, keyword: str, limit: int = 20) -> AsyncIterator[VideoInfo]:
-        """Search for videos by keyword."""
+    async def search_videos(self, keyword: str, limit: int = 20, order: str = "") -> AsyncIterator[VideoInfo]:
+        """Search for videos by keyword.
+        
+        Args:
+            keyword: Search keyword
+            limit: Maximum number of videos to return
+            order: Sort order - "pubdate" (newest first), "click" (most viewed), "dm" (most danmaku)
+        """
         page = 1
         collected = 0
 
         while collected < limit:
             try:
-                results = await self._search_videos_request(keyword, page)
+                results = await self._search_videos_request(keyword, page, order)
                 if not results:
                     break
 
@@ -68,7 +86,7 @@ class BilibiliPlatform(BasePlatform):
 
                     video = VideoInfo(
                         bvid=item.get("bvid", ""),
-                        title=item.get("title", ""),
+                        title=self._clean_html_tags(item.get("title", "")),
                         uploader=item.get("author", ""),
                         play_count=item.get("play", 0) or 0,
                         danmaku_count=item.get("danmaku", 0) or 0,

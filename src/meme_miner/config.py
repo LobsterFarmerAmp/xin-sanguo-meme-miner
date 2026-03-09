@@ -12,7 +12,7 @@ class BilibiliConfig(BaseModel):
     danmaku_url: str = "https://comment.bilibili.com/{cid}.xml"
     headers: dict = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://www.bilibili.com",
+        "Referer": "https://search.bilibili.com",
         "Accept": "application/json, text/plain, */*",
     }
     request_delay: float = 1.5  # seconds between requests
