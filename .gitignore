@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+env/
+venv/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Data (optional - keep sample data but ignore large files)
+# data/*.jsonl
+# data/*.log
+
+# OS
+.DS_Store
+Thumbs.db
